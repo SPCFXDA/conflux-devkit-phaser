@@ -4,6 +4,7 @@ import { FluentWalletManager } from './managers/FluentWalletManager_espace';
 import { FluentWalletManagerCore } from './managers/FluentWalletManager_core';
 import { Address, PublicClient, WalletClient } from 'viem';
 import { Address as CoreAddress} from 'cive';
+import { EventBus } from '../../EventBus';
 
 // Define a type union for wallet managers
 type WalletManager = MetaMaskWalletManager | FluentWalletManager | FluentWalletManagerCore;
@@ -99,16 +100,26 @@ export class WalletPlugin extends Phaser.Plugins.BasePlugin {
         }
     }
 
+    isConnected() {
+        return !!this.currentAccount;
+    }
+
     async connect(): Promise<Address | CoreAddress | null> {
         this.ensureManagerSet();
-        this.currentAccount = await this.currentManager?.connect() as Address | CoreAddress | null;
+        try {
+            this.currentAccount = await this.currentManager?.connect() as Address | CoreAddress | null;
+        } catch (error) {
+            console.error(error)
+            console.log('ERROR => wallet-connect', error)             
+
+        }
         return this.currentAccount;
     }
 
     async disconnectWallet(): Promise<void> {
         this.ensureManagerSet();
-        await this.currentManager?.disconnectWallet();
-        this.cleanupCurrentManager(); // Cleanup after disconnecting
+        this.currentManager?.disconnectWallet();
+        this.cleanupCurrentManager(); // Cleanup after disconnecting           
     }
 
     async getAccount(): Promise<Address | CoreAddress | undefined | null> {

@@ -9,8 +9,6 @@ export class Menu extends Scene
     gameText: Phaser.GameObjects.Text;
     private walletPlugin: WalletPlugin;
     private walletMenu: WalletMenu;
-    private core: Phaser.GameObjects.Image;
-    private espace: Phaser.GameObjects.Image;
     
     constructor ()
     {
@@ -25,9 +23,8 @@ export class Menu extends Scene
             return;
         }
 
-        // Initialize Wallet HUD
         this.walletMenu = new WalletMenu(this, this.walletPlugin);
-   
+
         EventBus.emit('menu-scene-ready', this);
     }
 

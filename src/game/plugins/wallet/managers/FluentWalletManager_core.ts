@@ -1,6 +1,7 @@
 import { Address, createPublicClient, createWalletClient, custom, formatCFX, parseCFX } from 'cive';
 import { mainnet } from 'cive/chains';
 import { BaseWalletManager } from './BaseWalletManager';
+import { EventBus } from '../../../EventBus';  // Assuming EventBus is imported here
 
 declare const window: any;
 
@@ -19,7 +20,7 @@ export class FluentWalletManagerCore extends BaseWalletManager {
     async getTransactionReceipt(txHash: string) {
         if (!this.publicClient || !this.currentAccount) {
             console.error('Public client is not initialized or no account found.');
-            this.game.events.emit('fluentError', 'Public client not initialized or no account.');
+            EventBus.emit('fluentError', 'Public client not initialized or no account.');
             return null;
         }
 
@@ -37,7 +38,7 @@ export class FluentWalletManagerCore extends BaseWalletManager {
     async connect(): Promise<Address | undefined> {
         if (!this.isWalletInstalled()) {
             console.error('Fluent is not installed.');
-            this.game.events.emit('fluentError', 'Fluent is not installed.');
+            EventBus.emit('fluentError', 'Fluent is not installed.');
             return;
         }
 
@@ -48,7 +49,7 @@ export class FluentWalletManagerCore extends BaseWalletManager {
 
             if (accounts.length === 0) {
                 console.error('No accounts found');
-                this.game.events.emit('fluentError', 'No accounts found.');
+                EventBus.emit('fluentError', 'No accounts found.');
                 return;
             }
 
@@ -62,12 +63,12 @@ export class FluentWalletManagerCore extends BaseWalletManager {
             if (chainId !== mainnet.id) {
                 await this.walletClient?.switchChain({ id: mainnet.id });
             }
-            this.game.events.emit('walletConnected', this.currentAccount, this.currentChainId);
+            EventBus.emit('walletConnected', this.currentAccount, this.currentChainId);
             return this.currentAccount as Address;
         } catch (error) {
             this.disconnectWallet();
             console.error('Error connecting to Fluent:', error);
-            this.game.events.emit('fluentError', 'Error connecting to Fluent.');
+            EventBus.emit('fluentError', 'Error connecting to Fluent.');
         }
     }
 
@@ -76,24 +77,24 @@ export class FluentWalletManagerCore extends BaseWalletManager {
         this.currentChainId = null;
         this.removeListeners(); // Remove listeners on disconnection
         console.log('Wallet disconnected');
-        this.game.events.emit('walletDisconnected');
+        EventBus.emit('walletDisconnected');
     }
 
     async getBalance(): Promise<string | null> {
         if (!this.publicClient || !this.currentAccount) {
             console.error('Public client is not initialized or no account found.');
-            this.game.events.emit('fluentError', 'Public client not initialized or no account.');
+            EventBus.emit('fluentError', 'Public client not initialized or no account.');
             return null;
         }
 
         try {
             const balance = await this.publicClient.getBalance({ address: this.currentAccount });
             const formattedBalance = formatCFX(balance);
-            this.game.events.emit('balanceUpdated', formattedBalance);
+            EventBus.emit('balanceUpdated', formattedBalance);
             return formattedBalance;
         } catch (error) {
             console.error('Error fetching balance:', error);
-            this.game.events.emit('fluentError', 'Error fetching balance.');
+            EventBus.emit('fluentError', 'Error fetching balance.');
             return null;
         }
     }
@@ -101,7 +102,7 @@ export class FluentWalletManagerCore extends BaseWalletManager {
     async sendTransaction(toAccount: Address, amount: string): Promise<string | undefined> {
         if (!this.walletClient || !this.currentAccount) {
             console.error('Wallet client is not initialized or no account found.');
-            this.game.events.emit('fluentError', 'Wallet client not initialized or no account.');
+            EventBus.emit('fluentError', 'Wallet client not initialized or no account.');
             return;
         }
 
@@ -112,28 +113,28 @@ export class FluentWalletManagerCore extends BaseWalletManager {
                 value: parseCFX(amount.toString()),
             });
 
-            this.game.events.emit('transactionSent', txnResponse.hash);
+            EventBus.emit('transactionSent', txnResponse.hash);
             return txnResponse.hash;
         } catch (error) {
             console.error('Error sending transaction with Fluent:', error);
-            this.game.events.emit('fluentError', 'Error sending transaction.');
+            EventBus.emit('fluentError', 'Error sending transaction.');
         }
     }
 
     async getBlockNumber(): Promise<number | undefined> {
         if (!this.publicClient) {
             console.error('Public client is not initialized.');
-            this.game.events.emit('fluentError', 'Public client not initialized.');
+            EventBus.emit('fluentError', 'Public client not initialized.');
             return;
         }
 
         try {
             const block = await this.publicClient.getBlock();
-            this.game.events.emit('blockNumberUpdated', block.blockNumber);
+            EventBus.emit('blockNumberUpdated', block.blockNumber);
             return block.blockNumber;
         } catch (error) {
             console.error('Error fetching block number:', error);
-            this.game.events.emit('fluentError', 'Error fetching block number.');
+            EventBus.emit('fluentError', 'Error fetching block number.');
         }
     }
 
@@ -149,7 +150,7 @@ export class FluentWalletManagerCore extends BaseWalletManager {
                 const account = accounts[0] as Address;
                 this.currentAccount = account;
                 console.log('Account changed:', this.currentAccount);
-                this.game.events.emit('accountChanged', this.currentAccount);
+                EventBus.emit('accountChanged', this.currentAccount);
             }
         };
 
@@ -157,7 +158,7 @@ export class FluentWalletManagerCore extends BaseWalletManager {
             this.currentChainId = chainId;
             console.log('Network changed:', this.currentChainId);
             await this.walletClient?.switchChain({ id: mainnet.id });
-            this.game.events.emit('chainChanged', this.currentChainId);
+            EventBus.emit('chainChanged', this.currentChainId);
         };
 
         // Add listeners

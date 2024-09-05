@@ -6,6 +6,7 @@ import { Menu } from './scenes/Menu';
 
 import { AUTO, Game } from 'phaser';
 import { Preloader } from './scenes/Preloader';
+import { WalletPlugin } from './plugins/wallet/WalletPlugin';
 
 //  Find out more information about the Game Config at:
 //  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
@@ -15,6 +16,18 @@ const config: Phaser.Types.Core.GameConfig = {
     height: 768,
     parent: 'game-container',
     backgroundColor: '#028af8',
+    plugins: {
+        global: [
+            { key: 'WalletPlugin', plugin: WalletPlugin, start: true }
+        ]
+    },
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { x:0, y: 200 },
+            debug: false
+        }
+    },
     scene: [
         Boot,
         Preloader,

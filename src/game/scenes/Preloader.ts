@@ -1,69 +1,97 @@
 import { Scene } from 'phaser';
 import { WalletPlugin } from '../plugins/wallet/WalletPlugin';
+import { EventBus } from '../EventBus';
 
-export class Preloader extends Scene
-{
-    constructor ()
-    {
+export class Preloader extends Scene {
+    constructor() {
         super('Preloader');
     }
 
-    init ()
-    {
-        //  We loaded this image in our Boot Scene, so we can display it here
+    init() {
+        // Display the background and the loading bar
         this.add.image(512, 384, 'background');
-
-        //  A simple progress bar. This is the outline of the bar.
         this.add.rectangle(512, 384, 468, 32).setStrokeStyle(1, 0xffffff);
 
-        //  This is the progress bar itself. It will increase in size from the left based on the % of progress.
-        const bar = this.add.rectangle(512-230, 384, 4, 28, 0xffffff);
+        const bar = this.add.rectangle(512 - 230, 384, 4, 28, 0xffffff);
 
-        //  Use the 'progress' event emitted by the LoaderPlugin to update the loading bar
+        // Update the progress bar during asset loading
         this.load.on('progress', (progress: number) => {
-
-            //  Update the progress bar (our bar is 464px wide, so 100% = 464px)
             bar.width = 4 + (460 * progress);
-
         });
     }
 
     loadFont(name: string, url: string) {
-        var newFont = new FontFace(name, `url(${url})`);
-        newFont.load().then(function (loaded) {
-            document.fonts.add(loaded);
-        }).catch(function (error) {
-            return error;
-        });
+        const newFont = new FontFace(name, `url(${url})`);
+        newFont.load()
+            .then((loaded) => {
+                document.fonts.add(loaded);
+            })
+            .catch((error) => {
+                console.error(`Error loading font: ${error}`);
+            });
     }
 
-    preload ()
-    {
-        this.loadFont('monoBold', 'assets/RobotoMono-Bold.ttf')
+    preload() {
+        // Load custom fonts and plugins
+        this.loadFont('monoBold', 'assets/RobotoMono-Bold.ttf');
         this.load.plugin('WalletPlugin', WalletPlugin, true);
-        //  Load the assets for the game - Replace with your own assets
-        this.load.setPath('assets');
 
+        // Load assets for the game
+        this.load.setPath('assets');
         this.load.image('logo', 'logo.png');
         this.load.image('star', 'star.png');
-
         this.load.svg('core', 'core.svg', { scale: 3 });
         this.load.svg('espace', 'espace.svg', { scale: 3 });
         this.load.svg('Fluent', 'logoFluent.svg', { scale: 0.7 });
         this.load.svg('MetaMask', 'logoMetamask.svg', { scale: 1 });
-
         this.load.svg('phaser', 'phaser-logo.svg', { scale: 1 });
         this.load.svg('conflux', 'conflux.svg', { scale: 1 });
+    }
+
+    create() {
+        // Start the MainMenu and Menu scenes
+        this.scene.start('MainMenu');
+        this.scene.launch('Menu');
+
+        // Listen for the 'wallet-connection-changed' event and restart game if wallet is disconnected
+        // EventBus.on('walletDisconnected', this.handleWalletDisconnection, this);
+        EventBus.on('walletConnected', this.handleWalletConnection.bind(this), this);
+        // EventBus.on('walletDisconnected', this.handleWalletDisconnection.bind(this), this);
 
     }
 
-    create ()
-    {
-        //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
-        //  For example, you can define global animations here, so we can use them in other scenes.
+    restartGame() {
+        if (this.scene) {
+            this.shutdown();
+            // Stop all active scenes before restarting
+            this.scene.manager.scenes.forEach((scene) => {
+                if (scene.scene.isActive()) {
+                    this.scene.stop(scene.scene.key);
+                }
+            });
+        }
 
-        //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
+        // Restart main scenes
         this.scene.start('MainMenu');
-        this.scene.launch('Menu')
+        this.scene.launch('Menu');
+    }
+
+    handleWalletConnection(account: string) {
+        console.log(`Wallet connected: ${account}`);
+        // Update UI or game logic based on wallet connection
+    }
+
+    handleWalletDisconnection() {
+        console.log("Wallet disconnected, restarting the game...");
+        this.scene.start('MainMenu');
+        this.scene.launch('Menu');
+
+        // this.restartGame();
+    }
+
+    // Clean up event listeners when the scene shuts down
+    shutdown() {
+        EventBus.off('walletConnected', this.handleWalletConnection, this);
+        EventBus.off('walletDisconnected', this.handleWalletDisconnection, this);
     }
 }

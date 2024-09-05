@@ -8,7 +8,7 @@ export class SelectionModal extends BaseModal {
     private managerOptions: OptionButton[] = [];
     private selectedSpace: OptionButton | null = null;
     private selectedManager: OptionButton | null = null;
-    private onConfirmCallback: (space: string, manager: string) => void;
+    private onConfirmCallback: (space: string, manager: string) => Promise<void>;
     private onCancelCallback: () => void;
     private walletPlugin: WalletPlugin;
 
@@ -17,10 +17,10 @@ export class SelectionModal extends BaseModal {
         x: number,
         y: number,
         walletPlugin: WalletPlugin,
-        onConfirm: (space: string, manager: string) => void,
+        onConfirm: (space: string, manager: string) => Promise<void>,
         onCancel: () => void
     ) {
-        super(scene, x, y, () => this.confirmSelection(), () => this.cancelSelection(), 500, 400);
+        super(scene, x, y, () => this.confirmSelection().then(), () => this.cancelSelection(), 500, 400);
 
         this.modalWidth = 800; // Default modal width
         this.modalHeight = 600; // Default modal height
@@ -116,11 +116,11 @@ export class SelectionModal extends BaseModal {
     }
 
     // Confirm the selection of space and manager
-    private confirmSelection() {
+    private async confirmSelection() {
         if (this.selectedSpace && this.selectedManager) {
             const space = this.selectedSpace.getData('key');
             const manager = this.selectedManager.getData('key');
-            this.onConfirmCallback(space, manager);
+            await this.onConfirmCallback(space, manager)
             this.hide();
         }
     }

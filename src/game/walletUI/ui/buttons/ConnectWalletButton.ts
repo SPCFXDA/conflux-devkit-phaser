@@ -11,7 +11,7 @@ export class ConnectWalletButton extends GameObjects.Container {
         this.handleWalletConnection = handleWalletConnection;
 
         // Connect Button
-        this.connectButton = new GenericButton(scene, 0, 0, 'Connect Wallet', () => this.connectToWallet(), 0x5dbea3, 0x33b249,200, 50);
+        this.connectButton = new GenericButton(scene, 0, 0, 'Connect Wallet', () => this.connectToWallet(), 0x0C8346, 0x0D5D56,200, 50);
         this.add(this.connectButton);
         this.connectButton.bloom()
 

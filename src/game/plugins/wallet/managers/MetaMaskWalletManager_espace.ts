@@ -1,6 +1,7 @@
 import { Address, createPublicClient, createWalletClient, custom, formatEther, parseEther } from 'viem';
 import { confluxESpace } from 'viem/chains';
 import { BaseWalletManager } from './BaseWalletManager';
+import { EventBus } from '../../../EventBus';  // Assuming EventBus is imported here
 
 declare const window: any;
 
@@ -19,7 +20,8 @@ export class MetaMaskWalletManager extends BaseWalletManager {
     async getTransactionReceipt(txHash: string) {
         if (!this.publicClient || !this.currentAccount) {
             console.error('Public client is not initialized or no account found.');
-            this.game.events.emit('metaMaskError', 'Public client not initialized or no account.');
+            console.log('Emitting metaMaskError: Public client not initialized or no account.');
+            EventBus.emit('metaMaskError', 'Public client not initialized or no account.');
             return null;
         }
 
@@ -37,7 +39,8 @@ export class MetaMaskWalletManager extends BaseWalletManager {
     async connect(): Promise<Address | undefined> {
         if (!this.isWalletInstalled()) {
             console.error('MetaMask is not installed.');
-            this.game.events.emit('metaMaskError', 'MetaMask is not installed.');
+            console.log('Emitting metaMaskError: MetaMask is not installed.');
+            EventBus.emit('metaMaskError', 'MetaMask is not installed.');
             return;
         }
 
@@ -48,7 +51,8 @@ export class MetaMaskWalletManager extends BaseWalletManager {
             const accounts = await this.walletClient.requestAddresses();
             if (accounts.length === 0) {
                 console.error('No accounts found');
-                this.game.events.emit('metaMaskError', 'No accounts found.');
+                console.log('Emitting metaMaskError: No accounts found.');
+                EventBus.emit('metaMaskError', 'No accounts found.');
                 return;
             }
 
@@ -61,12 +65,14 @@ export class MetaMaskWalletManager extends BaseWalletManager {
             console.log('Connected to MetaMask:', this.currentAccount, this.currentChainId);
             this.setupListeners();
 
-            this.game.events.emit('walletConnected', this.currentAccount, this.currentChainId);
+            console.log('Emitting walletConnected:', this.currentAccount, this.currentChainId);
+            EventBus.emit('walletConnected', this.currentAccount, this.currentChainId);
             return this.currentAccount as Address;
         } catch (error) {
             this.disconnectWallet();
             console.error('Error connecting to MetaMask:', error);
-            this.game.events.emit('metaMaskError', 'Error connecting to MetaMask.');
+            console.log('Emitting metaMaskError: Error connecting to MetaMask.');
+            EventBus.emit('metaMaskError', 'Error connecting to MetaMask.');
         }
     }
 
@@ -75,24 +81,28 @@ export class MetaMaskWalletManager extends BaseWalletManager {
         this.currentChainId = null;
         this.removeListeners(); // Remove listeners on disconnection
         console.log('Wallet disconnected');
-        this.game.events.emit('walletDisconnected');
+        console.log('Emitting walletDisconnected');
+        EventBus.emit('walletDisconnected');
     }
 
     async getBalance(): Promise<string | null> {
         if (!this.publicClient || !this.currentAccount) {
             console.error('Public client is not initialized or no account found.');
-            this.game.events.emit('metaMaskError', 'Public client not initialized or no account.');
+            console.log('Emitting metaMaskError: Public client not initialized or no account.');
+            EventBus.emit('metaMaskError', 'Public client not initialized or no account.');
             return null;
         }
 
         try {
             const balance = await this.publicClient.getBalance({ address: this.currentAccount });
             const formattedBalance = formatEther(balance);
-            this.game.events.emit('balanceUpdated', formattedBalance);
+            console.log('Emitting balanceUpdated:', formattedBalance);
+            EventBus.emit('balanceUpdated', formattedBalance);
             return formattedBalance;
         } catch (error) {
             console.error('Error fetching balance:', error);
-            this.game.events.emit('metaMaskError', 'Error fetching balance.');
+            console.log('Emitting metaMaskError: Error fetching balance.');
+            EventBus.emit('metaMaskError', 'Error fetching balance.');
             return null;
         }
     }
@@ -100,7 +110,8 @@ export class MetaMaskWalletManager extends BaseWalletManager {
     async sendTransaction(toAccount: Address, amount: string): Promise<string | undefined> {
         if (!this.walletClient || !this.currentAccount) {
             console.error('Wallet client is not initialized or no account found.');
-            this.game.events.emit('metaMaskError', 'Wallet client not initialized or no account.');
+            console.log('Emitting metaMaskError: Wallet client not initialized or no account.');
+            EventBus.emit('metaMaskError', 'Wallet client not initialized or no account.');
             return;
         }
 
@@ -111,28 +122,33 @@ export class MetaMaskWalletManager extends BaseWalletManager {
                 value: parseEther(amount.toString()),
             });
 
-            this.game.events.emit('transactionSent', txnResponse.hash);
+            console.log('Emitting transactionSent:', txnResponse.hash);
+            EventBus.emit('transactionSent', txnResponse.hash);
             return txnResponse.hash;
         } catch (error) {
             console.error('Error sending transaction with MetaMask:', error);
-            this.game.events.emit('metaMaskError', 'Error sending transaction.');
+            console.log('Emitting metaMaskError: Error sending transaction.');
+            EventBus.emit('metaMaskError', 'Error sending transaction.');
         }
     }
 
     async getBlockNumber(): Promise<number | undefined> {
         if (!this.publicClient) {
             console.error('Public client is not initialized.');
-            this.game.events.emit('metaMaskError', 'Public client not initialized.');
+            console.log('Emitting metaMaskError: Public client not initialized.');
+            EventBus.emit('metaMaskError', 'Public client not initialized.');
             return;
         }
 
         try {
             const blockNumber = await this.publicClient.getBlockNumber();
-            this.game.events.emit('blockNumberUpdated', blockNumber);
+            console.log('Emitting blockNumberUpdated:', blockNumber);
+            EventBus.emit('blockNumberUpdated', blockNumber);
             return blockNumber;
         } catch (error) {
             console.error('Error fetching block number:', error);
-            this.game.events.emit('metaMaskError', 'Error fetching block number.');
+            console.log('Emitting metaMaskError: Error fetching block number.');
+            EventBus.emit('metaMaskError', 'Error fetching block number.');
         }
     }
 
@@ -147,7 +163,8 @@ export class MetaMaskWalletManager extends BaseWalletManager {
             } else {
                 this.currentAccount = accounts[0];
                 console.log('Account changed:', this.currentAccount);
-                this.game.events.emit('accountChanged', this.currentAccount);
+                console.log('Emitting accountChanged:', this.currentAccount);
+                EventBus.emit('accountChanged', this.currentAccount);
             }
         };
 
@@ -155,7 +172,8 @@ export class MetaMaskWalletManager extends BaseWalletManager {
             this.currentChainId = chainId;
             console.log('Network changed:', this.currentChainId);
             await this.walletClient?.switchChain({ id: confluxESpace.id });
-            this.game.events.emit('chainChanged', this.currentChainId);
+            console.log('Emitting chainChanged:', this.currentChainId);
+            EventBus.emit('chainChanged', this.currentChainId);
         };
 
         // Add listeners
@@ -167,8 +185,6 @@ export class MetaMaskWalletManager extends BaseWalletManager {
         if (!this.metamask) return;
 
         // Remove listeners
-        // this.metamask.off('accountsChanged');
-        // this.metamask.off('chainChanged');
         this.metamask.removeListener('accountsChanged', this.accountChangedListener);
         this.metamask.removeListener('chainChanged', this.chainChangedListener);
     }
