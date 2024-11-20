@@ -1,6 +1,6 @@
 # Define the base image for the build, specifying the Node.js version
 ARG BASE_IMAGE=ubuntu:latest
-ARG DEVKIT_VERSION=v0.3.4
+ARG DEVKIT_VERSION=v0.4.1
 FROM spcfxda/devkit-cli:${DEVKIT_VERSION} AS devkit-cli
 FROM ${BASE_IMAGE} AS devkit
 
@@ -59,6 +59,11 @@ RUN printf '%s\n' \
 '    fi' \
 'fi' >> /home/${USERNAME}/.bashrc
 
+RUN printf '%s\n' \
+'{' \
+'  "type": "plaintext",' \
+'  "keystore": "test test test test test test test test test test test junk"' \
+'}' >> /home/${USERNAME}/.devkit.keystore.json
 
 # Set the working directory for the user
 WORKDIR /workspaces/
